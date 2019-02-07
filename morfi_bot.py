@@ -19,14 +19,10 @@ debug = os.environ['debug']
 
 def lambda_handler(event, context):
     print(event)
-    print(context)
-    # get http request from Telegram Server
     if 'checkoneminute' in event:
         checkOneMinute()
         return
     data = json.loads(event["body"])
-    
-    # response treating, add many update types as you want to handle. Here i handle only "message" and "callback_query"
     if 'message' in data:
         try:
             response = handleMessage(data)
@@ -35,9 +31,6 @@ def lambda_handler(event, context):
     elif 'callback_query' in data:
         response = handleCallbackQuery(data)
     else:
-        # Default response if we don't have anything to say.
-        # 'statusCode': '200' means that we read the UPDATE, so Telegram wont
-        # send it again. MUST HAVE
         response = {
             'statusCode': '200',
             'headers': headers
@@ -50,43 +43,39 @@ def handleMessage(update):
         message = "Bot en mantenimiento, no me usen"
         response = sendMessage(chatId,message)
         return response
-    try:
-        if 'text' in update['message']:
-            sender = update['message']['from']
-            text = update['message']['text']
-            commands = text.split(" ")
-            command = commands[0]
-            command = command.split("@", 1)[0]
-            print(command)
-            #################### ADD YOUR CODE HERE!!!!!!!!!!!
-            ###
-            if ('/abrir' == command):
-                time =  text.split(" ",1)[1]
-                message = abrirPedido(time)
-                response = sendMessage(chatId,message)
-            elif ('/cerrar' == command):
-                message = cerrarPedido()
-                response = sendMessage(chatId,message)
-            elif ('/pedir' == command):
-                pedido =  text.split(" ",1)[1]
-                message = pedir(pedido,sender)
-                response = sendMessage(chatId,message)
-            elif ('/pedido' == command):
-                message = mostrarPedido()
-                response = sendMessage(chatId,message)
-            elif ('/menu' == command):
-                message = mostrarMenu()
-                response = sendMessage(chatId,message)
-            elif command == "/qr":
-                response = sendPhoto(chatId,qr_token)
-            elif command == "/telefono":
-                message = "El telefono es 4791-2900"
-                response = sendMessage(chatId,message)
-            else:
-                response = sendMessage(chatId,"de que estas hablando willys?")
-    except:
-        message = "Algo salio mal, chequea la lista de comandos"
-        response = sendMessage(chatId,message)
+    
+    if 'text' in update['message']:
+        sender = update['message']['from']
+        text = update['message']['text']
+        commands = text.split(" ")
+        command = commands[0]
+        command = command.split("@", 1)[0]
+        print(text)
+        if ('/abrir' == command):
+            time =  text.split(" ",1)[1]
+            message = abrirPedido(time)
+            response = sendMessage(chatId,message)
+        elif ('/cerrar' == command):
+            message = cerrarPedido()
+            response = sendMessage(chatId,message)
+        elif ('/pedir' == command):
+            pedido =  text.split(" ",1)[1]
+            message = pedir(pedido,sender)
+            response = sendMessage(chatId,message)
+        elif ('/pedido' == command):
+            message = mostrarPedido()
+            response = sendMessage(chatId,message)
+        elif ('/menu' == command):
+            message = mostrarMenu()
+            response = sendMessage(chatId,message)
+        elif command == "/qr":
+            response = sendPhoto(chatId,qr_token)
+        elif command == "/telefono":
+            message = "El telefono es 4791-2900"
+            response = sendMessage(chatId,message)
+        else:
+            response = sendMessage(chatId,"de que estas hablando willys?")
+
     return response
 
 
@@ -135,7 +124,13 @@ def pedir(comida, sender):
     username = getUserName(sender)
     nuevoPedido = {"username":username,"pedido":comida}
     if 'pedidos' in pedidoActual:
-        list = pedidoActual['pedidos'].append(nuevoPedido)
+        find = "false"
+        for n, comidaPedida in enumerate(pedidoActual['pedidos']):
+            if comidaPedida['username'] == username:
+                pedidoActual['pedidos'][n] = nuevoPedido
+                find = "true"
+        if find =="false":
+            pedidoActual['pedidos'].append(nuevoPedido)
     else:
         pedidos = [nuevoPedido]
         pedidoActual['pedidos'] = pedidos
