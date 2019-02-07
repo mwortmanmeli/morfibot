@@ -39,12 +39,12 @@ def lambda_handler(event, context):
     return response
 
 def handleMessage(update):
+    chatId = update['message']['chat']['id']
     if(debug=="true"):
-        send_message("estoy configurando cosas, no me usen",chat_id)
+        send_message("estoy configurando cosas, no me usen",chatId)
         return {
         'statusCode': 200
     }
-    chatId = update['message']['chat']['id']
     try:
         if 'text' in update['message']:
             sender = update['message']['from']
