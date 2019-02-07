@@ -113,7 +113,7 @@ def cerrarPedido():
     pedidoActual['open'] = 'false'
     pedido['pedidoActual'] = json.dumps(pedidoActual)
     pedidoCerrado = "El pedido se cerro. \n" + pedidoToString(pedidoActual) 
-    if 'pedidos' in pedidoActual: 
+    if len(pedidoActual['pedidos'])>0: 
         users = []
         for comida in pedidoActual['pedidos']:
             users.append(comida['username'])
