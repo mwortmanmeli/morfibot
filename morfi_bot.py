@@ -6,7 +6,6 @@ import os
 
 from botocore.vendored import requests
 
-debug = "false"
 headers = {'Content-Type': 'application/json'}
 zapato = "👞"
 sushi = "🍣"
@@ -16,9 +15,11 @@ botToken = os.environ['BOT_TOKEN']
 URL = "https://api.telegram.org/bot{}/".format(botToken)
 qr_token = os.environ['QR_TOKEN']
 table_name = os.environ['TABLE_NAME']
+debug = os.environ['debug']
 
 def lambda_handler(event, context):
     print(event)
+    print(context)
     # get http request from Telegram Server
     if 'checkoneminute' in event:
         checkOneMinute()
@@ -44,12 +45,11 @@ def lambda_handler(event, context):
     return response
 
 def handleMessage(update):
-    if(debug=="true"):
-        send_message("estoy configurando cosas, no me usen",chat_id)
-        return {
-        'statusCode': 200
-    }
     chatId = update['message']['chat']['id']
+    if(debug=="true"):
+        message = "Bot en mantenimiento, no me usen"
+        response = sendMessage(chatId,message)
+        return response
     try:
         if 'text' in update['message']:
             sender = update['message']['from']
