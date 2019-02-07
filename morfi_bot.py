@@ -13,7 +13,9 @@ keyboard = {"inline_keyboard": [[{"text": "Very bad", "callback_data": "0"}], [{
 chatIdParaiso = os.environ['CHAT_PARAISO']
 botToken = os.environ['BOT_TOKEN']
 URL = "https://api.telegram.org/bot{}/".format(botToken)
+menu_token = os.environ['MENU_TOKEN']
 
+#"AgADAQAD-KcxG-3o4UY1xkPZuihZlyS8CjAABKRkOOQ2LGB4YuICAAEC"
 
 def lambda_handler(event, context):
     print(event)
@@ -77,7 +79,7 @@ def handleMessage(update):
                 message = mostrarMenu()
                 response = sendMessage(chatId,message)
             elif command == "/qr":
-                response = sendPhoto(chatId, "AgADAQAD-KcxG-3o4UY1xkPZuihZlyS8CjAABKRkOOQ2LGB4YuICAAEC")
+                response = sendPhoto(chatId,menu_token)
             elif command == "/telefono":
                 message = "El telefono es 4791-2900"
                 response = sendMessage(chatId,message)
@@ -90,7 +92,7 @@ def handleMessage(update):
 
 
 def sendMessageAsync(text, chat_id):
-    url = URL + "sendMessage?text={}&chat_id={}".format(text, chatIdParaiso)
+    url = URL + "sendMessage?text={}&chat_id={}".format(text, chat_id)
     requests.get(url)
 
 def checkOneMinute():
