@@ -2,6 +2,7 @@ import boto3
 import json
 import decimal
 import time
+import os
 
 from botocore.vendored import requests
 
@@ -13,13 +14,11 @@ keyboard = {"inline_keyboard": [[{"text": "Very bad", "callback_data": "0"}], [{
 chatIdParaiso = os.environ['CHAT_PARAISO']
 botToken = os.environ['BOT_TOKEN']
 URL = "https://api.telegram.org/bot{}/".format(botToken)
-menu_token = os.environ['MENU_TOKEN']
-
-#"AgADAQAD-KcxG-3o4UY1xkPZuihZlyS8CjAABKRkOOQ2LGB4YuICAAEC"
+qr_token = os.environ['QR_TOKEN']
+table_name = os.environ['TABLE_NAME']
 
 def lambda_handler(event, context):
     print(event)
-    print(context)
     # get http request from Telegram Server
     if 'checkoneminute' in event:
         checkOneMinute()
@@ -79,7 +78,7 @@ def handleMessage(update):
                 message = mostrarMenu()
                 response = sendMessage(chatId,message)
             elif command == "/qr":
-                response = sendPhoto(chatId,menu_token)
+                response = sendPhoto(chatId,qr_token)
             elif command == "/telefono":
                 message = "El telefono es 4791-2900"
                 response = sendMessage(chatId,message)
@@ -169,7 +168,7 @@ def saveToDynamo(pedido):
             'pedidoActual': {'S': pedido['pedidoActual']},
             'pedidos': {'S': pedido['pedidos']}
     }
-    dynamo.put_item(TableName="Lambda", Item=item)
+    dynamo.put_item(TableName=table_name, Item=item)
 
 
 def sendMessage(chatId, text, replyId=0, replyMode=False):
@@ -191,7 +190,7 @@ def sendMessage(chatId, text, replyId=0, replyMode=False):
 
 def findPedido():
     dynamo = boto3.client('dynamodb')
-    response = dynamo.get_item(TableName='Lambda', Key={"id": {"S": "1"}})
+    response = dynamo.get_item(TableName=table_name, Key={"id": {"S": "1"}})
     pedido = response['Item']
     print(pedido)
     return {
