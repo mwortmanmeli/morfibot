@@ -3,6 +3,7 @@ import json
 import decimal
 import time
 import os
+import random
 
 from botocore.vendored import requests
 
@@ -24,10 +25,8 @@ def lambda_handler(event, context):
         return
     data = json.loads(event["body"])
     if 'message' in data:
-        try:
-            response = handleMessage(data)
-        except:
-            response = "Algo salio mal, chequea la lista de comandos"
+        response = handleMessage(data)
+        #response = "Algo salio mal, chequea la lista de comandos"
     elif 'callback_query' in data:
         response = handleCallbackQuery(data)
     else:
@@ -113,8 +112,19 @@ def cerrarPedido():
         return "No hay un pedido abierto"
     pedidoActual['open'] = 'false'
     pedido['pedidoActual'] = json.dumps(pedidoActual)
+    pedidoCerrado = "El pedido se cerro. \n" + pedidoToString(pedidoActual) 
+    if 'pedidos' in pedidoActual: 
+        users = []
+        for comida in pedidoActual['pedidos']:
+            users.append(comida['username'])
+        llama = random.choice(users)
+        users.remove(llama)
+        busca = llama
+        if len(users)>0:
+            busca = random.choice(users)
+        pedidoCerrado = pedidoCerrado + "Llama: " + llama + " \n " + "Va a buscar " + busca
     saveToDynamo(pedido)
-    return "El pedido se cerro. \n" + pedidoToString(pedidoActual)
+    return pedidoCerrado 
 
 def pedir(comida, sender):
     pedido = findPedido();
