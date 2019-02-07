@@ -10,6 +10,10 @@ headers = {'Content-Type': 'application/json'}
 zapato = "👞"
 sushi = "🍣"
 keyboard = {"inline_keyboard": [[{"text": "Very bad", "callback_data": "0"}], [{"text": "Not that good", "callback_data": "1"}], [{"text": "It's ok", "callback_data": "2"}], [{"text": "So nice!", "callback_data": "3"}]]}
+chatIdParaiso = os.environ['CHAT_PARAISO']
+botToken = os.environ['BOT_TOKEN']
+URL = "https://api.telegram.org/bot{}/".format(botToken)
+
 
 def lambda_handler(event, context):
     print(event)
@@ -39,12 +43,12 @@ def lambda_handler(event, context):
     return response
 
 def handleMessage(update):
-    chatId = update['message']['chat']['id']
     if(debug=="true"):
-        send_message("estoy configurando cosas, no me usen",chatId)
+        send_message("estoy configurando cosas, no me usen",chat_id)
         return {
         'statusCode': 200
     }
+    chatId = update['message']['chat']['id']
     try:
         if 'text' in update['message']:
             sender = update['message']['from']
@@ -76,6 +80,7 @@ def handleMessage(update):
                 response = sendPhoto(chatId, "AgADAQAD-KcxG-3o4UY1xkPZuihZlyS8CjAABKRkOOQ2LGB4YuICAAEC")
             elif command == "/telefono":
                 message = "El telefono es 4791-2900"
+                response = sendMessage(chatId,message)
             else:
                 response = sendMessage(chatId,"de que estas hablando willys?")
     except:
@@ -83,13 +88,19 @@ def handleMessage(update):
         response = sendMessage(chatId,message)
     return response
 
+
+def sendMessageAsync(text, chat_id):
+    url = URL + "sendMessage?text={}&chat_id={}".format(text, chatIdParaiso)
+    requests.get(url)
+
 def checkOneMinute():
     pedido = findPedido();
     pedidoActual = json.loads(pedido['pedidoActual'])
     if pedidoActual['open'] == "true" :
         if float(pedidoActual['closeTime']) < time.time():
-            cerrarPedido()
-            print("se cerro el pedido")
+            pedidoCerrado = cerrarPedido()
+            sendMessageAsync(pedidoCerrado,chatIdParaiso)
+    
 
 
 def abrirPedido(timeMinutes):
