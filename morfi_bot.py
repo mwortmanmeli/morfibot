@@ -13,6 +13,7 @@ keyboard = {"inline_keyboard": [[{"text": "Very bad", "callback_data": "0"}], [{
 
 def lambda_handler(event, context):
     print(event)
+    print(context)
     # get http request from Telegram Server
     if 'checkoneminute' in event:
         checkOneMinute()
@@ -68,6 +69,13 @@ def handleMessage(update):
             elif ('/pedido' == command):
                 message = mostrarPedido()
                 response = sendMessage(chatId,message)
+            elif ('/menu' == command):
+                message = mostrarMenu()
+                response = sendMessage(chatId,message)
+            elif command == "/qr":
+                response = sendPhoto(chatId, "AgADAQAD-KcxG-3o4UY1xkPZuihZlyS8CjAABKRkOOQ2LGB4YuICAAEC")
+            elif command == "/telefono":
+                message = "El telefono es 4791-2900"
             else:
                 response = sendMessage(chatId,"de que estas hablando willys?")
     except:
@@ -188,3 +196,100 @@ def getUserName(sender):
         name = sender['id']
     print(name)
     return name
+
+def mostrarMenu():
+    menustr = ""
+    menu = menuJson['menu']
+    for categoria in menu:
+        menustr = menustr + categoria['nombre'] + "\n"
+        for plato in categoria['platos']:
+            menustr = menustr + " - " + plato + "\n"
+        if 'pastas' in categoria:
+            for pasta in categoria['pastas']:
+                menustr = menustr + " - " + pasta + "\n"
+    return menustr
+
+def sendPhoto(chatId, photo, replyId=0, replyMode=False):
+    print('chatID = ' + str(chatId) + ', photo = ' + photo)
+    if replyMode:
+        response = {
+            'statusCode': '200',
+            'body': json.dumps(
+                {'method': 'sendPhoto', 'chat_id': chatId, 'photo': photo, 'reply_to_message_id': replyId}),
+            'headers': headers
+        }
+    else:
+        response = {
+            'statusCode': '200',
+            'body': json.dumps({'method': 'sendPhoto', 'chat_id': chatId, 'photo': photo}),
+            'headers': headers
+        }
+    return response
+
+
+
+menuJson = {  
+   "menu":[  
+      {  
+         'nombre':'Pastas',
+         'platos':[  
+            'Ñoquis',
+            'Ravioles',
+            'Tallarines',
+            'Canelones'
+         ],
+         'salsas':[  
+            'Fileto',
+            'Bolognesa',
+            'Blanca',
+            'Crema',
+            'Mixta',
+            'Popeye'
+         ]
+      },
+      {  
+         'nombre':'Ensaladas',
+         'platos':[  
+            'Costa Brava (Tomate, Rúcula, Atún, Aceitunas, Huevo)',
+            'Nicoise (Arroz, Tomate, Atún, Aceitunas, Huevo)',
+            'Babilonia (Tomate, Rúcula, Blanco de Ave, Mozzarella)',
+            'Multicolor (Tomate, Papa, Chaucha, Zanahoria, Remolacha, Huevo)',
+            'Delicia (Tomate, Zanahoria, Choclo, Mozzarella, Albahaca)',
+            'Capresse (Tomate, Mozzarella, Albahaca, Oliva, Pimienta en grano)',
+            'A elección (Lechuga, Rúcula, Papa, Chaucha, Remolacha, Apio, Manzana, Zanahoria, Huevo, Tomate, Radicheta, Arveja)'
+         ]
+      },
+      {  
+         'nombre':'Frescos',
+         'platos':[  
+            'Salpicón de ave',
+            'Arrollado de ave con ensalada rusa',
+            'Matambre de ternera con ensalada rusa'
+         ]
+      },
+      {  
+         'nombre':'Pescados',
+         'platos':[  
+            'Brótola grillé con salsa tártara y vegetales',
+            'Corvina al horno con papas panaderas',
+            'Filet de merluza grillé o a la romana con guarnición'
+         ]
+      },
+      {  
+         'nombre':'Artesanales',
+         'platos':[  
+            'Milhojas de berenjena (Berenjenas, Queso, Zuchini, Tomate)',
+            'Mozzarella in carroza (Tomate, Albahaca)',
+            'Milanesa de pollo fiorentina (Verdura a la crema, Queso port salut)',
+            '1/4 de pollo a la crema de queso con papas fritas',
+            'Soufle vegetariano con crema de choclo y zanahoria',
+            '1/2 bife de chorizon con guarnición',
+            'Milanesa de pollo con guarnición',
+            'Milanesa de ternera con guarnición',
+            '1/4 de pollo grillé con guarnición',
+            'Costillita de cerdo grillé con guarnición',
+            'Bondiola de cerdo a la portuguesa con papas naturales o fritas'
+         ]
+      }
+   ]
+}
