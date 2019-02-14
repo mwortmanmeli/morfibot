@@ -72,9 +72,25 @@ def handleMessage(update):
         elif command == "/telefono":
             message = "El telefono es 4791-2900"
             response = sendMessage(chatId,message)
+        elif ('/prender' == command):
+            switch('true')
+            response = sendMessage(chatId,"Se prendio el morfi bot")
+        elif ('/apagar' == command):
+            switch('false')
+            response = sendMessage(chatId,"Se apago el morfi bot")
+        elif command == "/prendido":
+            prendido = estaPrendido()
+            message = "Bot online = " + prendido['prendido'];
+            response = sendMessage(chatId,message)    
         else:
             response = sendMessage(chatId,"de que estas hablando willys?")
 
+    status = estaPrendido()
+    if status['prendido']=='false':
+        response = response = {
+            'statusCode': '200',
+            'headers': headers
+        }
     return response
 
 
@@ -170,8 +186,15 @@ def saveToDynamo(pedido):
     dynamo = boto3.client('dynamodb')
     item = {
             'id': {'S': '1'},
-            'pedidoActual': {'S': pedido['pedidoActual']},
-            'pedidos': {'S': pedido['pedidos']}
+            'pedidoActual': {'S': pedido['pedidoActual']}
+    }
+    dynamo.put_item(TableName=table_name, Item=item)
+
+def switch(prendido):
+    dynamo = boto3.client('dynamodb')
+    item = {
+            'id': {'S': '2'},
+            'prendido': {'S': prendido}
     }
     dynamo.put_item(TableName=table_name, Item=item)
 
@@ -199,9 +222,20 @@ def findPedido():
     pedido = response['Item']
     print(pedido)
     return {
-        'pedidoActual': pedido['pedidoActual']['S'],
-        'pedidos': pedido['pedidos']['S']
+        'pedidoActual': pedido['pedidoActual']['S']
     }
+
+
+def estaPrendido():
+    dynamo = boto3.client('dynamodb')
+    response = dynamo.get_item(TableName=table_name, Key={"id": {"S": "2"}})
+    prendido = response['Item']
+    print(prendido)
+    return {
+        'prendido': prendido['prendido']['S'],   
+    }
+
+
 
 def getUserName(sender):
     name = "anonimo"
