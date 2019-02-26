@@ -12,6 +12,8 @@ zapato = "👞"
 sushi = "🍣"
 keyboard = {"inline_keyboard": [[{"text": "Very bad", "callback_data": "0"}], [{"text": "Not that good", "callback_data": "1"}], [{"text": "It's ok", "callback_data": "2"}], [{"text": "So nice!", "callback_data": "3"}]]}
 chatIdParaiso = os.environ['CHAT_PARAISO']
+chatIdAdmin = os.environ['CHAT_ADMIN']
+chatIdParaisoTest = os.environ['CHAT_PARAISO_TEST']
 botToken = os.environ['BOT_TOKEN']
 URL = "https://api.telegram.org/bot{}/".format(botToken)
 qr_token = os.environ['QR_TOKEN']
@@ -38,10 +40,20 @@ def lambda_handler(event, context):
 
 def handleMessage(update):
     chatId = update['message']['chat']['id']
+    print("chatId:" + str(chatId))
     if(debug=="true"):
-        message = "Bot en mantenimiento, no me usen"
-        response = sendMessage(chatId,message)
+        response = {
+                'statusCode': '200',
+                'headers': headers
+                }
         return response
+    if(str(chatId)!=chatIdParaiso and str(chatId)!= chatIdAdmin and str(chatId)!=chatIdParaisoTest):
+        response = {
+                'statusCode': '200',
+                'headers': headers
+                }
+        return response
+    
     
     if 'text' in update['message']:
         sender = update['message']['from']
@@ -50,16 +62,33 @@ def handleMessage(update):
         command = commands[0]
         command = command.split("@", 1)[0]
         print(text)
+        status = estaPrendido()
+        if status['prendido']=='false':
+            if ('/prender' == command):
+                switch('true')
+                response = sendMessage(chatId,"Se prendio el morfi bot")
+            else:
+                response = {
+                'statusCode': '200',
+                'headers': headers
+                }
+            return response
         if ('/abrir' == command):
-            time =  text.split(" ",1)[1]
-            message = abrirPedido(time)
+            time =  text.split(" ",1)
+            if len(time) < 2:
+                message = "Tenes que especificar en cuantos minutos cerrar el pedido"
+            else:
+                message = abrirPedido(time[1])
             response = sendMessage(chatId,message)
         elif ('/cerrar' == command):
             message = cerrarPedido()
             response = sendMessage(chatId,message)
         elif ('/pedir' == command):
-            pedido =  text.split(" ",1)[1]
-            message = pedir(pedido,sender)
+            pedido =  text.split(" ",1)
+            if len(pedido) < 2:
+                message = "Tenes que especificar que comida queres pedir"
+            else:
+                message = pedir(pedido[1],sender)
             response = sendMessage(chatId,message)
         elif ('/pedido' == command):
             message = mostrarPedido()
@@ -72,9 +101,6 @@ def handleMessage(update):
         elif command == "/telefono":
             message = "El telefono es 4791-2900"
             response = sendMessage(chatId,message)
-        elif ('/prender' == command):
-            switch('true')
-            response = sendMessage(chatId,"Se prendio el morfi bot")
         elif ('/apagar' == command):
             switch('false')
             response = sendMessage(chatId,"Se apago el morfi bot")
@@ -84,13 +110,7 @@ def handleMessage(update):
             response = sendMessage(chatId,message)    
         else:
             response = sendMessage(chatId,"de que estas hablando willys?")
-
-    status = estaPrendido()
-    if status['prendido']=='false':
-        response = response = {
-            'statusCode': '200',
-            'headers': headers
-        }
+        
     return response
 
 
@@ -109,13 +129,19 @@ def checkOneMinute():
 
 
 def abrirPedido(timeMinutes):
+    try:
+        floatMinutes = float(timeMinutes) * 60
+    except:
+        return "El tiempo para cerrar el pedido debe ser un numero entero"
     pedido = findPedido();
     pedidoActual = json.loads(pedido['pedidoActual'])
     if pedidoActual['open'] == "true" :
         return "Ya hay un pedido abierto"
     pedidoActual['open'] = 'true'
     pedidoActual['openTime'] = time.time()
-    pedidoActual['closeTime'] = (time.time() + float(timeMinutes) * 60)
+    
+        
+    pedidoActual['closeTime'] = (time.time() + floatMinutes)
     pedidoActual['pedidos'] = []
     pedido['pedidoActual'] = json.dumps(pedidoActual)
     saveToDynamo(pedido)
@@ -135,10 +161,15 @@ def cerrarPedido():
             users.append(comida['username'])
         llama = random.choice(users)
         users.remove(llama)
-        busca = llama
-        if len(users)>0:
-            busca = random.choice(users)
-        pedidoCerrado = pedidoCerrado + "Llama: " + llama + " \n " + "Va a buscar " + busca
+        if(len(users)==0):
+            busca = llama
+        else:
+            busca = ""
+            for i in range(0,int((len(users)-1)/4)+1):
+                if i > 0:
+                    busca = busca + ","
+                busca = busca + random.choice(users)
+        pedidoCerrado = pedidoCerrado + "Llama: " + llama + " \n " + "Va/n a buscar " + busca
     saveToDynamo(pedido)
     return pedidoCerrado 
 

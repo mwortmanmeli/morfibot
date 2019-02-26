@@ -1,0 +1,7 @@
+pedir - pedir comida
+abrir - abrir el pedido el cual cierra en T minutos
+cerrar - cerrar un pedido abierto
+pedido - mostrar el pedido actual
+qr - muestra el qr para pagar
+telefono - muestra el telefono de paraiso natural
+menu - muestra el menu
