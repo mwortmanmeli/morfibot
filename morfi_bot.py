@@ -17,6 +17,7 @@ chatIdParaisoTest = os.environ['CHAT_PARAISO_TEST']
 botToken = os.environ['BOT_TOKEN']
 URL = "https://api.telegram.org/bot{}/".format(botToken)
 qr_token = os.environ['QR_TOKEN']
+precios_token = os.environ['PRECIOS_TOKEN']
 table_name = os.environ['TABLE_NAME']
 debug = os.environ['debug']
 
@@ -47,7 +48,7 @@ def handleMessage(update):
                 'headers': headers
                 }
         return response
-    if(str(chatId)!=chatIdParaiso and str(chatId)!= chatIdAdmin and str(chatId)!=chatIdParaisoTest):
+    if(str(chatId) != chatIdParaiso and str(chatId) != chatIdAdmin and str(chatId) != chatIdParaisoTest):
         response = {
                 'statusCode': '200',
                 'headers': headers
@@ -66,7 +67,7 @@ def handleMessage(update):
         if status['prendido']=='false':
             if ('/prender' == command):
                 switch('true')
-                response = sendMessage(chatId,"Se prendio el morfi bot")
+                response = sendMessage(chatId,"Se prendio el morfi bot lambda")
             else:
                 response = {
                 'statusCode': '200',
@@ -98,12 +99,20 @@ def handleMessage(update):
             response = sendMessage(chatId,message)
         elif command == "/qr":
             response = sendPhoto(chatId,qr_token)
+        elif command == "/precios":
+            response = sendPhoto(chatId,precios_token)
         elif command == "/telefono":
             message = "El telefono es 4791-2900"
             response = sendMessage(chatId,message)
+        elif command == "/mail":
+            message = "El mail es paraisonaturalpedidos@gmail.com"
+            response = sendMessage(chatId,message)    
         elif ('/apagar' == command):
             switch('false')
-            response = sendMessage(chatId,"Se apago el morfi bot")
+            response = sendMessage(chatId,"Se apago el morfi bot lambda")
+        elif ('/mandarmail' == command):
+            mandarMail()
+            response = sendMessage(chatId,"Se mando el mail")
         elif command == "/prendido":
             prendido = estaPrendido()
             message = "Bot online = " + prendido['prendido'];
@@ -113,19 +122,58 @@ def handleMessage(update):
         
     return response
 
+def mandarMail():
+    print("se esta mandando el mail")
+    ses = boto3.client('ses')
+    email_from = 'toti359@gmail.com'
+    email_to = 'maxifwortman@gmail.com'
+    email_cc = 'Email'
+    emaiL_subject = 'Subject'
+    email_body = 'Body'
+    response = ses.send_email(
+        Source = email_from,
+        Destination={
+            'ToAddresses': [
+                email_to,
+            ],
+            'CcAddresses': [
+                email_cc,
+            ]
+        },
+        Message={
+            'Subject': {
+                'Data': emaiL_subject
+            },
+            'Body': {
+                'Text': {
+                    'Data': email_body
+                }
+            }
+        }
+    )
+    print("se mando el mail")
+    print(response)
+    return
 
 def sendMessageAsync(text, chat_id):
     url = URL + "sendMessage?text={}&chat_id={}".format(text, chat_id)
     requests.get(url)
 
 def checkOneMinute():
+    status = estaPrendido()
+    if status['prendido']=='false':
+        print("no prendido check one minute")
+        return
     pedido = findPedido();
     pedidoActual = json.loads(pedido['pedidoActual'])
     if pedidoActual['open'] == "true" :
         if float(pedidoActual['closeTime']) < time.time():
             pedidoCerrado = cerrarPedido()
             sendMessageAsync(pedidoCerrado,chatIdParaiso)
-    
+            return
+        if float(pedidoActual['closeTime']) >= (time.time() + 10*60) and float(pedidoActual['closeTime']) <= (time.time() + 11*60):
+            sendMessageAsync("el pedido cierra en 10 minutos" ,chatIdParaiso)
+            return
 
 
 def abrirPedido(timeMinutes):
@@ -133,6 +181,8 @@ def abrirPedido(timeMinutes):
         floatMinutes = float(timeMinutes) * 60
     except:
         return "El tiempo para cerrar el pedido debe ser un numero entero"
+    if floatMinutes <= 0:
+        return "El tiempo debe ser un numero positivo mayor que 0"
     pedido = findPedido();
     pedidoActual = json.loads(pedido['pedidoActual'])
     if pedidoActual['open'] == "true" :
@@ -165,11 +215,14 @@ def cerrarPedido():
             busca = llama
         else:
             busca = ""
-            for i in range(0,int((len(users)-1)/4)+1):
+            userLen = len(users)
+            for i in range(0,int((userLen-1)/4)+1):
                 if i > 0:
                     busca = busca + ","
-                busca = busca + random.choice(users)
-        pedidoCerrado = pedidoCerrado + "Llama: " + llama + " \n " + "Va/n a buscar " + busca
+                user = random.choice(users)
+                users.remove(user)
+                busca = busca + user
+        pedidoCerrado = pedidoCerrado + "Encargado de llamar o mandar el mail: " + llama + " \n" + "Va/n a buscar: " + busca
     saveToDynamo(pedido)
     return pedidoCerrado 
 
